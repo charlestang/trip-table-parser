@@ -1,3 +1,13 @@
+# PyCharm configurations
+.idea/
+
+# MacOS garbage
+.DS_Store
+
+# python virtualenv
+bin/
+include/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
