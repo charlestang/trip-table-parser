@@ -1,3 +1,7 @@
+tests/
+output.csv
+output.xlsx
+
 # PyCharm configurations
 .idea/
 
