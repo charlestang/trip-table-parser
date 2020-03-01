@@ -1,5 +1,11 @@
 # 网约车 PDF 行程单解析 Trip Table Parser
 
+- [前言](#前言)
+- [使用方法](#使用方法)
+  - [环境依赖的初始化](#环境依赖的初始化)
+  - [命令的使用方法](#命令的使用方法)
+- [开发说明](#开发说明)
+
 ## 前言
 
 本项目实现了一个 PDF 格式行程单的解析，可以将滴滴出行、高德地图导出的 PDF 格式电子行程单，转换成 CSV 或者 Excel 格式。
@@ -38,7 +44,7 @@ source bin/activate
 pip install -r requirements.pip
 ```
 
-这个命令会在项目的虚拟环境下，安装所有一类的软件包。如果需要退出 virtualenv 环境，直接执行：
+这个命令会在项目的虚拟环境下，安装所有依赖的软件包。如果需要退出 virtualenv 环境，直接执行：
 
 ```shell
 deactivate
@@ -60,7 +66,7 @@ python trip_table_parser.py /home/jack/滴滴行程单.pdf
 
  * MacOS 10.14.6
  * Python 3.7.6
- * Java 1.8.0_121
+ * **Java 1.8.0_121**（tabula-py 是对 tabula-java 的封装，所以需要依赖 Java）
 
 当前版本引用的 python 类库，全部使用 `pip` 安装：
 
@@ -69,12 +75,12 @@ python trip_table_parser.py /home/jack/滴滴行程单.pdf
  * et-xmlfile==1.0.1
  * jdcal==1.4.1
  * numpy==1.18.1
- * openpyxl==3.0.3
+ * **openpyxl**==3.0.3 （导出 Excel 格式依赖）
  * pandas==1.0.1
- * pdfminer.six==20200124
+ * **pdfminer.six**==20200124
  * pycryptodome==3.9.7
  * python-dateutil==2.8.1
  * pytz==2019.3
  * six==1.14.0
  * sortedcontainers==2.1.0
- * tabula-py==2.0.4
+ * **tabula-py**==2.0.4
