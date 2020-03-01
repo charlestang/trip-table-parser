@@ -6,8 +6,10 @@ import argparse
 import tabula
 import logging
 import re
+import pandas
 
 from codecs import BOM_UTF8
+from math import isnan
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 from pdfminer.high_level import extract_text
@@ -24,6 +26,7 @@ def _read_as_text(file_path):
     return ''.join(whole_file)
 
 def _parse_didi(file_path, line_count=0):
+    """解析滴滴出行的行程单，表头行需要特别清洗"""
     didi_area = [266, 42.765625, 785.028125, 564.134375]
     if line_count != 0:
         didi_area[2] = 3120.003125 + 31.2375 * line_count
@@ -32,9 +35,13 @@ def _parse_didi(file_path, line_count=0):
         logging.error("no table found")
     elif 1 < len(dfs):
         logging.warn("more than 1 table recognized")
-    return dfs[0]
+    df = dfs[0]
+    # 滴滴的表头行有一些多余的换行符，导致导出的 CSV 破损
+    df.columns = [ name.replace('\r', ' ') for name in df.columns ]
+    return df
 
 def _parse_gaode(file_path, line_count=0):
+    """解析高德地图的行程单，表头行需要特别清洗"""
     gaode_area = [173, 37.5767, 791.3437, 559.1864]
     if line_count != 0:
         gaode_area[2] = 216.9033 + line_count * 30
@@ -45,7 +52,41 @@ def _parse_gaode(file_path, line_count=0):
         logging.warn("more than 1 table recognized")
     return dfs[0]
 
+def _parse_shouqi(file_path, line_count=0):
+    """解析首汽约车的行程单，是最难处理的一种类型"""
+    shouqi_area = [153.584375, 29.378125, 817.753125, 566.365625]
+    if line_count != 0:
+        shouqi_area[2] = 176.64062 + 15.95379 * line_count
+    dfs = tabula.read_pdf(file_path, pages="all", area=shouqi_area, stream=True) 
+    if 0 == len(dfs):
+        logging.error("no table found")
+    elif 1 < len(dfs):
+        logging.warn("more than 1 table recognized")
+    df = dfs[0]
 
+    # 对识别结果进行处理
+    # 表头处理
+    rows = df.iloc[0].values
+    df.columns = [str(x).strip() + ('' if str(y).strip() == 'nan' else str(y).strip()) for x, y in zip(df.columns, rows)]
+
+    # 数据处理
+    data = df.values
+    row_index = range(len(data))
+    new_data = []
+    for x, y in zip(row_index[1::2], row_index[2::2]):
+        new_row = [ str(a).strip() + ('' if str(b).strip() == 'nan' else str(b).strip()) for a, b in zip(data[x], data[y]) ]
+        new_data.append(new_row)
+
+    new_df = pandas.DataFrame(new_data, columns = df.columns)
+    return new_df
+
+def _parse_unknown(file_path):
+    dfs = tabula.read_pdf(file_path, pages="all", stream=True) 
+    if 0 == len(dfs):
+        logging.error("no table found")
+    elif 1 < len(dfs):
+        logging.warn("more than 1 table recognized")
+    return dfs[0]
 
 def _output_csv(df, output_path):
     """利用 DataFrame 自身的 API，导出到 CSV 格式"""
@@ -54,17 +95,21 @@ def _output_csv(df, output_path):
         output.write(BOM_UTF8)
 
     with open(output_path, mode='a', newline='') as output:
-        df.to_csv(output)
+        df.to_csv(output, index=False)
 
 def _output_excel(df, output_path):
     """利用 DataFrame 自身的 API，导出到 Excel 格式"""
-    df.to_excel(output_path, sheet_name='Sheet1')
+    df.to_excel(output_path, index=False, sheet_name='Sheet1')
 
 def _parse(file_path, platform, line_count):
     if platform == 'didi':
         df = _parse_didi(file_path, line_count)
-    else: 
+    elif platform == 'gaode': 
         df = _parse_gaode(file_path, line_count)
+    elif platform == 'shouqi':
+        df = _parse_shouqi(file_path, line_count)
+    else:
+        df = _parse_unknown(file_path)
 
     return df
 
@@ -99,10 +144,15 @@ def main(args=None):
         if match:
             line_count = int(match.group(1))
 
+    if re.search(r'首汽约车电子行程单', read_as_string) != None:
+        if args.platform == 'unknown':
+            args.platform = 'shouqi'
+        match = re.search(r'共(\d+)个行程', read_as_string)
+        if match:
+            line_count = int(match.group(1))
+
     df = _parse(args.file_path, args.platform, line_count)
     
-    # 滴滴的表头行有一些多余的换行符，导致导出的 CSV 破损
-    df.columns = [ name.replace('\r', ' ') for name in df.columns ]
 
     if args.output_type == 'csv':
         _output_csv(df, args.output)
