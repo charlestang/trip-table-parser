@@ -119,7 +119,7 @@ def main(args=None):
     parser.add_argument('file_path', metavar='<FILE>', type=str, 
             help='需要处理的行程单文件')
     parser.add_argument('--platform', '-p', metavar='<P>',  type=str, default='unknown',
-            help='来源的商户，didi，gaode')
+            help='来源的商户: didi，gaode，shouqi，unknown')
     parser.add_argument('--output', '-o', metavar='<FILE NAME>', type=str, default='output.csv',
             help='输出的文件名，默认是 output.csv，如果类型是 excel，则是 output.xlsx')
     parser.add_argument('--output_type', '-t', metavar='<TYPE>', type=str, default='csv',

@@ -8,7 +8,11 @@
 
 ## 前言
 
-本项目实现了一个 PDF 格式行程单的解析，可以将滴滴出行、高德地图导出的 PDF 格式电子行程单，转换成 CSV 或者 Excel 格式。
+本项目实现了一个 PDF 格式行程单的解析，可以将网约车平台导出的 PDF 格式电子行程单，转换成 CSV 或者 Excel 格式。目前支持的平台有：
+ * 滴滴出行
+ * 高德地图
+ * 首汽约车
+ * 美团打车（暂未）
 
 鄙公司出于财务流程的需要，每次报销网约车的时候，需要逐笔录入网约车行程，通过该工具，将网约车平台导出的 PDF 行程单数据化，可以简化报销单填写的流程。
 
@@ -51,14 +55,38 @@ deactivate
 ```
 
 ### 命令的使用方法
+在命令行使用 python 解释器执行代码，使用 `-h` 或者 `--help` 参数展示详细的使用方法：
 
 ```shell
 # 该命令将展示一个帮助说明
 python trip_table_parser.py -h
+usage: trip_table_parser.py [-h] [--platform <P>] [--output <FILE NAME>]
+                            [--output_type <TYPE>]
+                            <FILE>
 
+这是一个小工具，用于将滴滴出行、高德地图等打车记录 形成的 PDF 格式电子行程单，转换成文本，CSV 或者 Excel 等格式。
+
+positional arguments:
+  <FILE>                需要处理的行程单文件
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --platform <P>, -p <P>
+                        来源的商户: didi，gaode，shouqi，unknown (default: unknown)
+  --output <FILE NAME>, -o <FILE NAME>
+                        输出的文件名，默认是 output.csv，如果类型是 excel，则是 output.xlsx
+                        (default: output.csv)
+  --output_type <TYPE>, -t <TYPE>
+                        输出文件类型，默认是csv，也可以是excel (default: csv)
+```
+
+最简单的方法，是直接在后面跟上需要转换的文件，其他参数都选用默认值，程序会自动猜测到底是来自哪个平台：
+
+```shell
 # 常见用法，只给出 PDF 行程单的路径，则默认会在命令行打印出识别的结果，并导出到工作目录，导出格式默认是 CSV 格式
 python trip_table_parser.py /home/jack/滴滴行程单.pdf
 ```
+
 
 ## 开发说明
 
