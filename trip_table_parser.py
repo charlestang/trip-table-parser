@@ -3,22 +3,16 @@
 import os
 import sys
 import argparse
-import tabula
-import logging
 import re
+import logging
 import pandas
+import tabula
 
 from codecs import BOM_UTF8
 from math import isnan
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 from pdfminer.high_level import extract_text
-
-#df = tabular.read_pdf("test.pdf", pages="all")
-
-#tabula.convert_into("testfiles/3639.pdf", "output.csv", output_format="csv", pages='all')
-#tabula.convert_into("testfiles/3255.pdf", "output.csv", output_format="csv", pages='all')
-
 
 def _read_as_text(file_path):
     trip_table_file_content = extract_text(file_path)
@@ -80,6 +74,29 @@ def _parse_shouqi(file_path, line_count=0):
     new_df = pandas.DataFrame(new_data, columns = df.columns)
     return new_df
 
+def _parse_meituan(file_path, line_count=0):
+    """解析美团打车的行程单，也是比较难处理的一种类型"""
+    meituan_area = [285.7275, 41.6925, 314.7975, 571.0725]
+    if line_count:
+        meituan_area[2] = 314.7975 + 28.305 * line_count
+    dfs = tabula.read_pdf(file_path, pages = '1', area = meituan_area, stream = True)
+    if 0 == len(dfs):
+        logging.errors("no table found")
+    elif 1 < len(dfs):
+        logging.warn("more than 1 table recognized")
+
+    df = dfs[0]
+
+    data = df.values
+    row_index = range(len(data))
+    new_data = []
+    for x, y in zip(row_index[::2], row_index[1::2]):
+        new_row = [('' if str(x).strip() == 'nan' else (str(x).strip() + ' ')) + str(y).strip() for x, y in zip(data[x], data[y]) ]
+        new_data.append(new_row)
+    new_df = pandas.DataFrame(new_data, columns = df.columns)
+
+    return new_df
+
 def _parse_unknown(file_path):
     dfs = tabula.read_pdf(file_path, pages="all", stream=True) 
     if 0 == len(dfs):
@@ -108,6 +125,8 @@ def _parse(file_path, platform, line_count):
         df = _parse_gaode(file_path, line_count)
     elif platform == 'shouqi':
         df = _parse_shouqi(file_path, line_count)
+    elif platform == 'meituan':
+        df = _parse_meituan(file_path, line_count)
     else:
         df = _parse_unknown(file_path)
 
@@ -151,8 +170,14 @@ def main(args=None):
         if match:
             line_count = int(match.group(1))
 
+    if re.search(r'美团打车', read_as_string) != None:
+        if args.platform == 'unknown':
+            args.platform = 'meituan'
+        match = re.search(r'(\d+)笔行程', read_as_string)
+        if match:
+            line_count = int(match.group(1))
+
     df = _parse(args.file_path, args.platform, line_count)
-    
 
     if args.output_type == 'csv':
         _output_csv(df, args.output)
