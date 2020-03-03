@@ -5,6 +5,9 @@ output.xlsx
 # PyCharm configurations
 .idea/
 
+# VS Code configurations
+.vscode/
+
 # MacOS garbage
 .DS_Store
 
