@@ -127,6 +127,7 @@ def _output_excel(df, output_path):
     """利用 DataFrame 自身的 API，导出到 Excel 格式"""
     df.to_excel(output_path, index=False, sheet_name='Sheet1')
 
+
 def _output(df, file_type):
     extension = {'csv': 'csv', 'excel': 'xlsx'}
     if file_type in ['csv', 'excel']:
@@ -157,18 +158,14 @@ def _extract_text(file_path):
 def _read_meta(file_path):
     """读取行程单的信息，识别平台、行数、页数等"""
     file_content = _extract_text(file_path)
-    platform = 'unknown'
     line_count = 0
-    parser = _parse_unknown
     for p, pattern in platform_pattern.items():
         if re.search(pattern['title_like'], file_content):
-            platform = p
             match = re.search(pattern['line_count_like'], file_content)
             if match:
                 line_count = int(match.group(1))
-            parser = pattern['parser']
-            break
-    return platform, line_count, parser
+            return p, line_count, pattern['parser']
+    return 'unknown', 0, _parse_unknown
 
 
 def main(args=None):

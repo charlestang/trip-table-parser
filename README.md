@@ -60,9 +60,7 @@ deactivate
 ```shell
 # 该命令将展示一个帮助说明
 python trip_table_parser.py -h
-usage: trip_table_parser.py [-h] [--platform <P>] [--output <FILE NAME>]
-                            [--output_type <TYPE>]
-                            <FILE>
+usage: trip_table_parser.py [-h] [--output_type <TYPE>] <FILE>
 
 这是一个小工具，用于将滴滴出行、高德地图等打车记录 形成的 PDF 格式电子行程单，转换成文本，CSV 或者 Excel 等格式。
 
