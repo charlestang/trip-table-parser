@@ -71,11 +71,6 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --platform <P>, -p <P>
-                        来源的商户: didi，gaode，shouqi，unknown (default: unknown)
-  --output <FILE NAME>, -o <FILE NAME>
-                        输出的文件名，默认是 output.csv，如果类型是 excel，则是 output.xlsx
-                        (default: output.csv)
   --output_type <TYPE>, -t <TYPE>
                         输出文件类型，默认是csv，也可以是excel (default: csv)
 ```
