@@ -35,6 +35,22 @@ def _parse_didi(file_path, line_count=0):
     return df
 
 
+def _parse_huaxiaozhu(file_path, line_count=0):
+    """解析花小猪打车行程单"""
+    huaxiaozhu_area = [222, 42, 780, 564]
+    if line_count != 0:
+        huaxiaozhu_area[2] = 262 + 31 * line_count
+    dfs = tabula.read_pdf(file_path, pages="all", area=huaxiaozhu_area)
+    if 0 == len(dfs):
+        logging.error("no table found")
+    elif 1 < len(dfs):
+        logging.warning("more than 1 table recognized")
+    df = dfs[0]
+    # 滴滴的表头行有一些多余的换行符，导致导出的 CSV 破损
+    df.columns = [name.replace('\r', ' ') for name in df.columns]
+    return df
+
+
 def _parse_gaode(file_path, line_count=0):
     """解析高德地图的行程单"""
     gaode_area = [173, 37.5767, 791.3437, 559.1864]
@@ -53,7 +69,8 @@ def _parse_shouqi(file_path, line_count=0):
     shouqi_area = [153.584375, 29.378125, 817.753125, 566.365625]
     if line_count != 0:
         shouqi_area[2] = 176.64062 + 15.95379 * line_count
-    dfs = tabula.read_pdf(file_path, pages="all", area=shouqi_area, stream=True)
+    dfs = tabula.read_pdf(file_path, pages="all",
+                          area=shouqi_area, stream=True)
     if 0 == len(dfs):
         logging.error("no table found")
     elif 1 < len(dfs):
@@ -141,7 +158,8 @@ platform_pattern = {
     'didi':    {'title_like': '滴滴出行', 'line_count_like': r'共(\d+)笔行程', 'parser': _parse_didi},
     'gaode':   {'title_like': '高德地图', 'line_count_like': r'共计(\d+)单行程', 'parser': _parse_gaode},
     'shouqi':  {'title_like': '首汽约车电子行程单', 'line_count_like': r'共(\d+)个行程', 'parser': _parse_shouqi},
-    'meituan': {'title_like': '美团打车', 'line_count_like': r'(\d+)笔行程', 'parser': _parse_meituan}
+    'meituan': {'title_like': '美团打车', 'line_count_like': r'(\d+)笔行程', 'parser': _parse_meituan},
+    'huaxiaozhu': {'title_like': '花小猪打车', 'line_count_like': r'(\d+)笔行程', 'parser': _parse_huaxiaozhu}
 }
 
 
@@ -169,13 +187,13 @@ def _read_meta(file_path):
 
 
 def main(args=None):
-    parser = ArgumentParser(description=__doc__, add_help=True,
-                            formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('file_path', metavar='<FILE>', type=str,
-                        help='需要处理的行程单文件')
-    parser.add_argument('--output_type', '-t', metavar='<TYPE>', type=str, default='csv',
-                        help='输出文件类型，默认是csv，也可以是excel')
-    args = parser.parse_args(args)
+    arg_parser = ArgumentParser(description=__doc__, add_help=True,
+                                formatter_class=ArgumentDefaultsHelpFormatter)
+    arg_parser.add_argument('file_path', metavar='<FILE>', type=str,
+                            help='需要处理的行程单文件')
+    arg_parser.add_argument('--output_type', '-t', metavar='<TYPE>', type=str, default='csv',
+                            help='输出文件类型，默认是csv，也可以是excel')
+    args = arg_parser.parse_args(args)
 
     platform, line_count, parser = _read_meta(args.file_path)
     print("识别出来的平台是：%s，行程行数是：%d" % (platform, line_count))
