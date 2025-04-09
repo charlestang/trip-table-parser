@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trip_table_parser"
+version = "1.0.0"
+description = "A CLI tool for quick SSH server access"
+authors = [{ name = "Charles Tang", email = "charlestang@foxmail.com" }]
+dependencies = [
+    "chardet>=3.0.4",
+    "distro>=1.4.0",
+    "et-xmlfile>=1.0.1",
+    "jdcal>=1.4.1",
+    "numpy>=1.24.0",
+    "openpyxl>=3.0.3",
+    "pandas>=1.0.1",
+    "pdfminer.six>=20200124",
+    "pycryptodome>=3.9.7",
+    "python-dateutil>=2.8.1",
+    "pytz>=2019.3",
+    "six>=1.14.0",
+    "sortedcontainers>=2.1.0",
+    "tabula-py>=2.0.4",
+    "JPype1>=1.4.1",
+]
+requires-python = ">=3.8"
+readme = "README.md"
+license = { file = "LICENSE" }
+
+[project.scripts]
+trip-table-parser = "trip_table_parser.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/trip_table_parser"]

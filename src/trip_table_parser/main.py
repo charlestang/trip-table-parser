@@ -11,6 +11,7 @@ import re
 import logging
 import pandas
 import tabula
+import json
 
 from codecs import BOM_UTF8
 from argparse import ArgumentParser
@@ -19,12 +20,29 @@ from pdfminer.high_level import extract_text
 from pdfminer.pdfparser import PDFSyntaxError
 
 
-def _parse_didi(file_path, line_count=0):
+def _detect_table_area(file_path):
+    """自动检测 PDF 中的表格区域"""
+    # 首先尝试使用 tabula 的 lattice 模式检测所有表格
+    dfs = tabula.read_pdf(file_path, pages="all", lattice=True)
+    if len(dfs) > 0:
+        # 如果找到表格，返回第一个表格的区域
+        return dfs[0]
+
+    # 如果 lattice 模式没找到，尝试 stream 模式
+    dfs = tabula.read_pdf(file_path, pages="all", stream=True)
+    if len(dfs) > 0:
+        return dfs[0]
+
+    return None
+
+
+def _parse_didi(file_path, line_count=0, area=None):
     """解析滴滴出行的行程单，表头行需要特别清洗"""
-    didi_area = [266, 42.765625, 785.028125, 564.134375]
+    if area is None:
+        area = [266, 42.765625, 785.028125, 564.134375]
     if line_count != 0:
-        didi_area[2] = 3120.003125 + 31.2375 * line_count
-    dfs = tabula.read_pdf(file_path, pages="all", area=didi_area)
+        area[2] = 3120.003125 + 31.2375 * line_count
+    dfs = tabula.read_pdf(file_path, pages="all", area=area)
     if 0 == len(dfs):
         logging.error("no table found")
     elif 1 < len(dfs):
@@ -35,12 +53,13 @@ def _parse_didi(file_path, line_count=0):
     return df
 
 
-def _parse_huaxiaozhu(file_path, line_count=0):
+def _parse_huaxiaozhu(file_path, line_count=0, area=None):
     """解析花小猪打车行程单"""
-    huaxiaozhu_area = [222, 42, 780, 564]
+    if area is None:
+        area = [222, 42, 780, 564]
     if line_count != 0:
-        huaxiaozhu_area[2] = 262 + 31 * line_count
-    dfs = tabula.read_pdf(file_path, pages="all", area=huaxiaozhu_area)
+        area[2] = 262 + 31 * line_count
+    dfs = tabula.read_pdf(file_path, pages="all", area=area)
     if 0 == len(dfs):
         logging.error("no table found")
     elif 1 < len(dfs):
@@ -51,12 +70,13 @@ def _parse_huaxiaozhu(file_path, line_count=0):
     return df
 
 
-def _parse_gaode(file_path, line_count=0):
+def _parse_gaode(file_path, line_count=0, area=None):
     """解析高德地图的行程单"""
-    gaode_area = [173, 37.5767, 791.3437, 559.1864]
+    if area is None:
+        area = [295.2185, 40.065, 791.3437, 559.1864]
     if line_count != 0:
-        gaode_area[2] = 216.9033 + line_count * 30
-    dfs = tabula.read_pdf(file_path, pages="all", area=gaode_area, stream=True)
+        area[2] = 325.2185 + line_count * 30
+    dfs = tabula.read_pdf(file_path, pages="all", area=area, stream=True)
     if 0 == len(dfs):
         logging.error("no table found")
     elif 1 < len(dfs):
@@ -64,13 +84,14 @@ def _parse_gaode(file_path, line_count=0):
     return dfs[0]
 
 
-def _parse_shouqi(file_path, line_count=0):
+def _parse_shouqi(file_path, line_count=0, area=None):
     """解析首汽约车的行程单，是最难处理的一种类型"""
-    shouqi_area = [153.584375, 29.378125, 817.753125, 566.365625]
+    if area is None:
+        area = [153.584375, 29.378125, 817.753125, 566.365625]
     if line_count != 0:
-        shouqi_area[2] = 176.64062 + 15.95379 * line_count
+        area[2] = 176.64062 + 15.95379 * line_count
     dfs = tabula.read_pdf(file_path, pages="all",
-                          area=shouqi_area, stream=True)
+                          area=area, stream=True)
     if 0 == len(dfs):
         logging.error("no table found")
     elif 1 < len(dfs):
@@ -96,12 +117,13 @@ def _parse_shouqi(file_path, line_count=0):
     return new_df
 
 
-def _parse_meituan(file_path, line_count=0):
+def _parse_meituan(file_path, line_count=0, area=None):
     """解析美团打车的行程单，也是比较难处理的一种类型"""
-    meituan_area = [285.7275, 41.6925, 314.7975, 571.0725]
+    if area is None:
+        area = [285.7275, 41.6925, 314.7975, 571.0725]
     if line_count:
-        meituan_area[2] = 314.7975 + 28.305 * line_count
-    dfs = tabula.read_pdf(file_path, pages='1', area=meituan_area, stream=True)
+        area[2] = 314.7975 + 28.305 * line_count
+    dfs = tabula.read_pdf(file_path, pages='1', area=area, stream=True)
     if 0 == len(dfs):
         logging.error("no table found")
     elif 1 < len(dfs):
@@ -121,8 +143,18 @@ def _parse_meituan(file_path, line_count=0):
     return new_df
 
 
-def _parse_unknown(file_path):
-    dfs = tabula.read_pdf(file_path, pages="all", stream=True)
+def _parse_unknown(file_path, area=None):
+    """使用自动检测或指定的区域解析未知平台的行程单"""
+    if area is not None:
+        dfs = tabula.read_pdf(file_path, pages="all", area=area, stream=True)
+    else:
+        # 尝试自动检测表格
+        df = _detect_table_area(file_path)
+        if df is not None:
+            return df
+        # 如果自动检测失败，使用默认的 stream 模式
+        dfs = tabula.read_pdf(file_path, pages="all", stream=True)
+
     if 0 == len(dfs):
         logging.error("no table found")
     elif 1 < len(dfs):
@@ -193,12 +225,39 @@ def main(args=None):
                             help='需要处理的行程单文件')
     arg_parser.add_argument('--output_type', '-t', metavar='<TYPE>', type=str, default='csv',
                             help='输出文件类型，默认是csv，也可以是excel')
+    arg_parser.add_argument('--area', '-a', metavar='<AREA>', type=str,
+                            help='手动指定表格区域，格式为 [top,left,bottom,right]')
+    arg_parser.add_argument('--debug', '-d', action='store_true',
+                            help='启用调试模式，显示更多信息')
     args = arg_parser.parse_args(args)
+
+    # 设置日志级别
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARNING)
+
+    # 解析区域参数
+    area = None
+    if args.area:
+        try:
+            area = json.loads(args.area)
+            if not isinstance(area, list) or len(area) != 4:
+                raise ValueError("区域必须是包含4个数字的列表")
+        except json.JSONDecodeError:
+            logging.error("区域参数格式错误，必须是有效的 JSON 数组")
+            return 1
+        except ValueError as e:
+            logging.error(str(e))
+            return 1
 
     platform, line_count, parser = _read_meta(args.file_path)
     print("识别出来的平台是：%s，行程行数是：%d" % (platform, line_count))
 
-    df = parser(args.file_path, line_count)
+    if args.debug:
+        print("使用的区域参数：", area if area else "自动检测")
+
+    df = parser(args.file_path, line_count, area)
     _output(df, args.output_type)
 
     print(df)

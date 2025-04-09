@@ -1,10 +1,14 @@
 # 网约车 PDF 行程单解析 Trip Table Parser
 
-- [前言](#前言)
-- [使用方法](#使用方法)
-  - [环境依赖的初始化](#环境依赖的初始化)
-  - [命令的使用方法](#命令的使用方法)
-- [开发说明](#开发说明)
+- [网约车 PDF 行程单解析 Trip Table Parser](#网约车-pdf-行程单解析-trip-table-parser)
+  - [前言](#前言)
+  - [安装方法](#安装方法)
+    - [使用 pipx 安装（推荐）](#使用-pipx-安装推荐)
+    - [从源码安装](#从源码安装)
+    - [环境要求](#环境要求)
+  - [使用方法](#使用方法)
+    - [命令的使用方法](#命令的使用方法)
+  - [开发说明](#开发说明)
 
 ## 前言
 
@@ -19,68 +23,77 @@
 
 本项目另一重意义是，展示了 Python 类库在处理 PDF 文件时的能力。这里重点推荐一下 `tabula-py` 和 `pdfminer.six` 这两个类库，是我此次尝试的几个类库里比较好用的。
 
-## 使用方法
+## 安装方法
 
-### 环境依赖的初始化
+### 使用 pipx 安装（推荐）
 
-这个项目使用 Python 3 编写，使用了 virtualenv 来管理环境依赖。
+[pipx](https://pypa.github.io/pipx/) 是一个用于安装和运行 Python 应用的工具，它可以将 Python 应用安装到独立的环境中。
 
-首先确保你的环境中安装了 Python 3，并对应的安装有 pip（_有些系统里会有两个 pip 命令，pip3 对应着 Python 3 的版本_）。
-
-```shell
-pip install virtualenv
+1. 首先安装 pipx：
+```bash
+python -m pip install --user pipx
+python -m pipx ensurepath
 ```
 
-克隆好项目的代码后，首先进入目录，然后执行命令：
-
-```shell
-virtualenv .
+2. 然后安装本工具：
+```bash
+pipx install trip-table-parser
 ```
 
-这个命令会初始化整个目录的 virtualenv 的结构，然后，进入项目根目录，执行：
+安装完成后，你可以直接在命令行使用 `trip-table-parser` 命令。
 
-```shell
-source bin/activate
+### 从源码安装
+
+如果你想要从源码安装，可以按照以下步骤操作：
+
+1. 克隆项目代码：
+```bash
+git clone https://github.com/yourusername/trip-table-parser.git
+cd trip-table-parser
 ```
 
-到此，项目的 virtualenv 环境初始化完成，然后，恢复包依赖：
+2. 创建并激活虚拟环境：
+```bash
+python -m venv venv
+source venv/bin/activate  # 在 Windows 上使用 venv\Scripts\activate
+```
 
-```shell
+3. 安装依赖：
+```bash
 pip install -r requirements.pip
 ```
 
-这个命令会在项目的虚拟环境下，安装所有依赖的软件包。如果需要退出 virtualenv 环境，直接执行：
-
-```shell
-deactivate
+4. 安装项目：
+```bash
+pip install -e .
 ```
 
+### 环境要求
+
+本工具需要以下环境：
+
+1. Python 3.8 或更高版本
+2. Java 运行时环境（JRE）8 或更高版本
+   - 在 macOS 上可以使用 `brew install java` 安装
+   - 在 Ubuntu/Debian 上可以使用 `sudo apt install default-jre` 安装
+   - 在 Windows 上可以从 [Oracle 官网](https://www.oracle.com/java/technologies/downloads/) 下载安装
+
+## 使用方法
+
 ### 命令的使用方法
-在命令行使用 python 解释器执行代码，使用 `-h` 或者 `--help` 参数展示详细的使用方法：
 
-```shell
-# 该命令将展示一个帮助说明
-python trip_table_parser.py -h
-usage: trip_table_parser.py [-h] [--output_type <TYPE>] <FILE>
+在命令行中使用 `-h` 或者 `--help` 参数展示详细的使用方法：
 
-这是一个小工具，用于将滴滴出行、高德地图等打车记录 形成的 PDF 格式电子行程单，转换成文本，CSV 或者 Excel 等格式。
-
-positional arguments:
-  <FILE>                需要处理的行程单文件
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --output_type <TYPE>, -t <TYPE>
-                        输出文件类型，默认是csv，也可以是excel (default: csv)
+```bash
+trip-table-parser -h
 ```
 
 最简单的方法，是直接在后面跟上需要转换的文件，其他参数都选用默认值，程序会自动猜测到底是来自哪个平台：
 
-```shell
+```bash
 # 常见用法，只给出 PDF 行程单的路径，则默认会在命令行打印出识别的结果，并导出到工作目录，导出格式默认是 CSV 格式
-python trip_table_parser.py /home/jack/滴滴行程单.pdf
+trip-table-parser /path/to/your/trip.pdf
 ```
-
 
 ## 开发说明
 
