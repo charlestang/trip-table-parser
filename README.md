@@ -3,7 +3,7 @@
 - [网约车 PDF 行程单解析 Trip Table Parser](#网约车-pdf-行程单解析-trip-table-parser)
   - [前言](#前言)
   - [安装方法](#安装方法)
-    - [使用 pipx 安装（推荐）](#使用-pipx-安装推荐)
+    - [安装 pipx](#安装-pipx)
     - [从源码安装](#从源码安装)
     - [环境要求](#环境要求)
   - [使用方法](#使用方法)
@@ -13,6 +13,7 @@
 ## 前言
 
 本项目实现了一个 PDF 格式行程单的解析，可以将网约车平台导出的 PDF 格式电子行程单，转换成 CSV 或者 Excel 格式。目前支持的平台有：
+
  * 滴滴出行
  * 高德地图
  * 首汽约车
@@ -25,26 +26,22 @@
 
 ## 安装方法
 
-### 使用 pipx 安装（推荐）
+### 安装 pipx
 
 [pipx](https://pypa.github.io/pipx/) 是一个用于安装和运行 Python 应用的工具，它可以将 Python 应用安装到独立的环境中。
 
-1. 首先安装 pipx：
+安装 pipx 的步骤如下：
+
 ```bash
 python -m pip install --user pipx
 python -m pipx ensurepath
 ```
 
-2. 然后安装本工具：
-```bash
-pipx install trip-table-parser
-```
-
-安装完成后，你可以直接在命令行使用 `trip-table-parser` 命令。
+因为只是一个很小的功能，所以没有把项目发布到包管理器服务中，所以不能使用命令直接安装。
 
 ### 从源码安装
 
-如果你想要从源码安装，可以按照以下步骤操作：
+要从源码安装，可以按照以下步骤操作：
 
 1. 克隆项目代码：
 ```bash
@@ -52,20 +49,13 @@ git clone https://github.com/yourusername/trip-table-parser.git
 cd trip-table-parser
 ```
 
-2. 创建并激活虚拟环境：
+2. 安装项目：
 ```bash
-python -m venv venv
-source venv/bin/activate  # 在 Windows 上使用 venv\Scripts\activate
-```
+# 以调试模式安装，安装完，修改代码可以立即生效
+pipx install -e .
 
-3. 安装依赖：
-```bash
-pip install -r requirements.pip
-```
-
-4. 安装项目：
-```bash
-pip install -e .
+# 以生产模式安装，安装完，修改代码需要重新安装
+pipx install .
 ```
 
 ### 环境要求
@@ -76,7 +66,7 @@ pip install -e .
 2. Java 运行时环境（JRE）8 或更高版本
    - 在 macOS 上可以使用 `brew install java` 安装
    - 在 Ubuntu/Debian 上可以使用 `sudo apt install default-jre` 安装
-   - 在 Windows 上可以从 [Oracle 官网](https://www.oracle.com/java/technologies/downloads/) 下载安装
+   - 在 Windows 上可以从 Oracle 官网下载安装
 
 ## 使用方法
 
@@ -103,7 +93,7 @@ trip-table-parser /path/to/your/trip.pdf
  * Python 3.7.6
  * **Java 1.8.0_121**（tabula-py 是对 tabula-java 的封装，所以需要依赖 Java）
 
-当前版本引用的 python 类库，全部使用 `pip` 安装：
+当前版本引用的 python 类库，全部使用 `pipx` 安装：
 
  * chardet==3.0.4
  * distro==1.4.0
